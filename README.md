@@ -22,20 +22,35 @@ This platform demonstrates a hybrid off-chain/on-chain architecture for enterpri
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│    Frontend     │────▶│     Backend      │────▶│   PostgreSQL    │
-│   React + Vite  │     │  Spring Boot 3   │     │   (Off-chain)   │
-│   Port: 3000    │     │   Port: 8080     │     │   Port: 5432    │
-└─────────────────┘     └────────┬─────────┘     └─────────────────┘
-                                 │
-                                 │ web3j
-                                 ▼
-                        ┌──────────────────┐
-                        │    Blockchain    │
-                        │  Hardhat (Local) │
-                        │    Port: 8545    │
-                        └──────────────────┘
+```mermaid
+flowchart TB
+    subgraph Frontend
+        UI[React + Vite<br/>Port 3000]
+    end
+    
+    subgraph Backend
+        API[Spring Boot 3<br/>Port 8080]
+    end
+    
+    subgraph Database
+        DB[(PostgreSQL<br/>Port 5432)]
+    end
+    
+    subgraph Blockchain
+        BC[Hardhat Node<br/>Port 8545]
+        SC[TransferLedger<br/>Smart Contract]
+    end
+    
+    UI -->|REST API| API
+    API -->|JPA| DB
+    API -->|web3j| BC
+    BC --- SC
+    
+    style UI fill:#61dafb,color:#000
+    style API fill:#6db33f,color:#fff
+    style DB fill:#336791,color:#fff
+    style BC fill:#f7df1e,color:#000
+    style SC fill:#8b5cf6,color:#fff
 ```
 
 ---
@@ -44,42 +59,68 @@ This platform demonstrates a hybrid off-chain/on-chain architecture for enterpri
 
 ### 🔐 Role-Based Access Control
 
-Five user roles with different permission levels:
-
-**Admin** - System administrator with full access including user management
-
-**Warehouse Manager** - Manages warehouse operations: create, cancel, approve transfers, update status, view all data
-
-**Logistics** - Handles deliveries: update delivery status, view transfers and inventory
-
-**Inventory Clerk** - Manages stock: create transfer requests, view inventory and reports
-
-**Viewer** - Read-only access to inventory only
+```mermaid
+graph TD
+    subgraph Roles
+        A[👑 ADMIN<br/>Level 5]
+        B[📦 WAREHOUSE MANAGER<br/>Level 4]
+        C[🚚 LOGISTICS<br/>Level 3]
+        D[📋 INVENTORY CLERK<br/>Level 2]
+        E[👁️ VIEWER<br/>Level 1]
+    end
+    
+    A -->|Full Access| ALL[All Features + User Management]
+    B -->|Manage| MANAGE[Create, Cancel, Approve, Update Status, View All]
+    C -->|Delivery| DELIVERY[Update Delivery Status, View Transfers & Inventory]
+    D -->|Stock| STOCK[Create Transfers, View Inventory & Reports]
+    E -->|Read Only| VIEW[View Inventory Only]
+    
+    style A fill:#ef4444,color:#fff
+    style B fill:#8b5cf6,color:#fff
+    style C fill:#3b82f6,color:#fff
+    style D fill:#10b981,color:#fff
+    style E fill:#6b7280,color:#fff
+```
 
 ### 📊 Dashboard Pages
 
-- **Dashboard** - Overview stats, recent transfers, low stock alerts (All users)
-- **Transfers** - All transfers with filtering and status management (Manager+)
-- **New Transfer** - Create blockchain-verified transfer requests (Clerk+)
-- **Inventory** - Stock levels by location with search and filters (All users)
-- **Reports** - Analytics, charts, stock value by location (Clerk+)
-- **Users** - User management and permission matrix (Admin only)
+```mermaid
+graph LR
+    subgraph Pages
+        DASH[📊 Dashboard]
+        TRANS[📦 Transfers]
+        NEW[➕ New Transfer]
+        INV[📋 Inventory]
+        REP[📈 Reports]
+        USR[👥 Users]
+    end
+    
+    DASH -->|All Users| A1[Stats & Alerts]
+    TRANS -->|Manager+| A2[Filter & Manage]
+    NEW -->|Clerk+| A3[Create Orders]
+    INV -->|All Users| A4[Stock Levels]
+    REP -->|Clerk+| A5[Analytics]
+    USR -->|Admin Only| A6[User Management]
+```
 
 ### 📦 Transfer Status Workflow
 
+```mermaid
+stateDiagram-v2
+    [*] --> REQUESTED: Create Transfer
+    REQUESTED --> CONFIRMED: Approve
+    CONFIRMED --> IN_TRANSIT: Ship
+    IN_TRANSIT --> DELIVERED: Complete
+    DELIVERED --> [*]
+    
+    REQUESTED --> CANCELLED: Cancel
+    CONFIRMED --> CANCELLED: Cancel
+    IN_TRANSIT --> CANCELLED: Cancel
+    CANCELLED --> [*]
+    
+    REQUESTED --> FAILED: Error
+    FAILED --> [*]
 ```
-REQUESTED ──▶ CONFIRMED ──▶ IN_TRANSIT ──▶ DELIVERED
-                 │              │
-                 ▼              ▼
-             CANCELLED      CANCELLED
-```
-
-**Status Descriptions:**
-- `REQUESTED` - Order created, recorded on blockchain
-- `CONFIRMED` - Approved by manager, ready for shipping
-- `IN_TRANSIT` - Shipment on the way
-- `DELIVERED` - Successfully received and verified
-- `CANCELLED` - Order cancelled at any stage
 
 ### 🏷️ Real-World SKU Catalog
 
@@ -103,39 +144,43 @@ REQUESTED ──▶ CONFIRMED ──▶ IN_TRANSIT ──▶ DELIVERED
 
 ## 📁 Project Structure
 
-```
-inventory-blockchain/
-│
-├── backend/                     # Spring Boot REST API
-│   └── supply-chain-platform/
-│       ├── pom.xml
-│       └── src/main/
-│           ├── java/com/inventory/blockchain/
-│           │   ├── config/          # Web3, CORS configuration
-│           │   ├── controller/      # REST endpoints
-│           │   ├── dto/             # Request/Response objects
-│           │   ├── entity/          # JPA entities
-│           │   ├── exception/       # Error handling
-│           │   ├── repository/      # Data access
-│           │   ├── service/         # Business logic
-│           │   └── util/            # Hash utilities
-│           └── resources/
-│               └── application.yml
-│
-├── frontend/                    # React Dashboard
-│   ├── package.json
-│   ├── vite.config.js
-│   └── src/
-│       ├── App.jsx              # Main app with all pages
-│       └── main.jsx
-│
-└── chain/                       # Smart Contracts (Hardhat)
-    ├── package.json
-    ├── hardhat.config.js
-    ├── contracts/
-    │   └── TransferLedger.sol
-    └── scripts/
-        └── deploy.js
+```mermaid
+graph TD
+    ROOT[inventory-blockchain]
+    ROOT --> BE[backend/]
+    ROOT --> FE[frontend/]
+    ROOT --> CH[chain/]
+    
+    BE --> SCP[supply-chain-platform/]
+    SCP --> POM[pom.xml]
+    SCP --> SRC[src/main/]
+    SRC --> JAVA[java/com/inventory/blockchain/]
+    SRC --> RES[resources/application.yml]
+    
+    JAVA --> CONFIG[config/]
+    JAVA --> CTRL[controller/]
+    JAVA --> DTO[dto/]
+    JAVA --> ENTITY[entity/]
+    JAVA --> EXCEPT[exception/]
+    JAVA --> REPO[repository/]
+    JAVA --> SERV[service/]
+    JAVA --> UTIL[util/]
+    
+    FE --> PKG[package.json]
+    FE --> VITE[vite.config.js]
+    FE --> FESRC[src/]
+    FESRC --> APP[App.jsx]
+    FESRC --> MAIN[main.jsx]
+    
+    CH --> CHPKG[package.json]
+    CH --> HH[hardhat.config.js]
+    CH --> CONT[contracts/TransferLedger.sol]
+    CH --> SCRIPT[scripts/deploy.js]
+    
+    style ROOT fill:#f1f5f9,color:#000
+    style BE fill:#6db33f,color:#fff
+    style FE fill:#61dafb,color:#000
+    style CH fill:#f7df1e,color:#000
 ```
 
 ---
@@ -200,19 +245,13 @@ Navigate to: **http://localhost:3000**
 
 ## 🔑 Demo Accounts
 
-Use these credentials to test different access levels:
-
-```
-┌─────────────┬───────────────┬────────────────────┬─────────────────┐
-│  Username   │   Password    │       Role         │  Access Level   │
-├─────────────┼───────────────┼────────────────────┼─────────────────┤
-│  admin      │  admin123     │  Administrator     │  Full access    │
-│  manager    │  manager123   │  Warehouse Manager │  Manage all     │
-│  logistics  │  logistics123 │  Logistics         │  Update status  │
-│  clerk      │  clerk123     │  Inventory Clerk   │  Create/View    │
-│  viewer     │  viewer123    │  Viewer            │  View only      │
-└─────────────┴───────────────┴────────────────────┴─────────────────┘
-```
+| Username | Password | Role | Access Level |
+|----------|----------|------|--------------|
+| `admin` | `admin123` | Administrator | Full access |
+| `manager` | `manager123` | Warehouse Manager | Manage all |
+| `logistics` | `logistics123` | Logistics | Update status |
+| `clerk` | `clerk123` | Inventory Clerk | Create/View |
+| `viewer` | `viewer123` | Viewer | View only |
 
 ---
 
@@ -220,18 +259,18 @@ Use these credentials to test different access levels:
 
 ### Transfers API
 
-```
-GET    /api/transfers              List all transfers
-POST   /api/transfers              Create new transfer
-GET    /api/transfers/{id}         Get transfer by ID
-PUT    /api/transfers/{id}/status  Update transfer status
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/transfers` | List all transfers |
+| `POST` | `/api/transfers` | Create new transfer |
+| `GET` | `/api/transfers/{id}` | Get transfer by ID |
+| `PUT` | `/api/transfers/{id}/status` | Update transfer status |
 
 ### Health Check
 
-```
-GET    /actuator/health            Application health status
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/actuator/health` | Application health status |
 
 ### Example: Create Transfer
 
@@ -278,44 +317,52 @@ CHAIN_ID=31337
 
 ## 🛠️ Tech Stack
 
-**Frontend**
-- React 18
-- Vite 5
-- CSS-in-JS
-
-**Backend**
-- Spring Boot 3.3
-- Java 21
-- Maven
-- Spring Data JPA
-
-**Database**
-- PostgreSQL 14+
-
-**Blockchain**
-- Ethereum
-- Solidity 0.8.20
-- Hardhat
-- web3j 4.12.2
+```mermaid
+graph LR
+    subgraph Frontend
+        REACT[React 18]
+        VITE[Vite 5]
+        CSS[CSS-in-JS]
+    end
+    
+    subgraph Backend
+        SPRING[Spring Boot 3.3]
+        JAVA[Java 21]
+        MAVEN[Maven]
+        JPA[Spring Data JPA]
+    end
+    
+    subgraph Database
+        PG[(PostgreSQL 14+)]
+    end
+    
+    subgraph Blockchain
+        ETH[Ethereum]
+        SOL[Solidity 0.8.20]
+        HH[Hardhat]
+        WEB3[web3j 4.12.2]
+    end
+    
+    style REACT fill:#61dafb,color:#000
+    style SPRING fill:#6db33f,color:#fff
+    style PG fill:#336791,color:#fff
+    style ETH fill:#3c3c3d,color:#fff
+```
 
 ---
 
 ## 🔒 Permission Matrix
 
-```
-┌──────────────────────┬───────┬─────────┬───────────┬───────┬────────┐
-│       Action         │ Admin │ Manager │ Logistics │ Clerk │ Viewer │
-├──────────────────────┼───────┼─────────┼───────────┼───────┼────────┤
-│ Create Transfer      │   ✓   │    ✓    │     ✗     │   ✓   │   ✗    │
-│ Cancel Transfer      │   ✓   │    ✓    │     ✗     │   ✗   │   ✗    │
-│ Approve Transfer     │   ✓   │    ✓    │     ✗     │   ✗   │   ✗    │
-│ Update Status        │   ✓   │    ✓    │     ✓     │   ✗   │   ✗    │
-│ View All Transfers   │   ✓   │    ✓    │     ✓     │   ✓   │   ✗    │
-│ View Inventory       │   ✓   │    ✓    │     ✓     │   ✓   │   ✓    │
-│ View Reports         │   ✓   │    ✓    │     ✓     │   ✓   │   ✗    │
-│ Manage Users         │   ✓   │    ✗    │     ✗     │   ✗   │   ✗    │
-└──────────────────────┴───────┴─────────┴───────────┴───────┴────────┘
-```
+| Action | Admin | Manager | Logistics | Clerk | Viewer |
+|--------|:-----:|:-------:|:---------:|:-----:|:------:|
+| Create Transfer | ✅ | ✅ | ❌ | ✅ | ❌ |
+| Cancel Transfer | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Approve Transfer | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Update Status | ✅ | ✅ | ✅ | ❌ | ❌ |
+| View All Transfers | ✅ | ✅ | ✅ | ✅ | ❌ |
+| View Inventory | ✅ | ✅ | ✅ | ✅ | ✅ |
+| View Reports | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Manage Users | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 ---
 
@@ -323,16 +370,21 @@ CHAIN_ID=31337
 
 ### Two-Phase Commit Pattern
 
-```
-1. PHASE 1 - DATABASE
-   └── Create transfer record with REQUESTED status
-
-2. PHASE 2 - BLOCKCHAIN  
-   └── Send transaction, wait for confirmation
-
-3. PHASE 3 - UPDATE
-   └── Update record with txHash, blockNumber
-   └── Set status to CONFIRMED
+```mermaid
+sequenceDiagram
+    participant UI as Frontend
+    participant API as Backend
+    participant DB as PostgreSQL
+    participant BC as Blockchain
+    
+    UI->>API: POST /api/transfers
+    API->>DB: Save (status: REQUESTED)
+    DB-->>API: Saved
+    API->>BC: requestTransfer()
+    BC-->>API: txHash, blockNumber
+    API->>DB: Update (status: CONFIRMED)
+    DB-->>API: Updated
+    API-->>UI: Transfer Created
 ```
 
 ### Deterministic Hashing
