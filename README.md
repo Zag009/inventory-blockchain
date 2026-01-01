@@ -274,10 +274,10 @@ graph TB
     F --> G{Status: CONFIRMED}
     G --> H[6. Return to User]
     
-    style A fill:#61dafb
-    style C fill:#fbbf24
-    style G fill:#34d399
-    style H fill:#61dafb
+    style A fill:#4A0C01
+    style C fill:#01374A
+    style G fill:#2D014A
+    style H fill:#023000
 ```
 
 | Step | Component | Action |
