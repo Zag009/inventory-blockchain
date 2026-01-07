@@ -187,7 +187,7 @@ npx hardhat run scripts/deploy.js --network localhost
 ### Step 5: Start Backend (Terminal 3)
 
 ```bash
-cd backend/supply-chain-platform
+cd .\backend\supply-chain-platform\
 mvn spring-boot:run
 ```
 
