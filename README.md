@@ -10,6 +10,28 @@ A full-stack supply chain management system with blockchain verification and rol
 
 ---
 
+## 🌐 Live Demo
+
+**[▶️ View Live Demo](https://supply-chain-frontend-t3l1.onrender.com)**
+
+> ⚠️ **Note:** The app is hosted on Render's free tier, so the first load may take 30-60 seconds while the server wakes up.
+
+### Quick Start Demo
+
+1. Visit the [Live Demo](https://supply-chain-frontend-t3l1.onrender.com)
+2. Click **"Show Demo Accounts"** on the login page
+3. Select any account to auto-fill credentials:
+
+| Username | Password | Role | What You Can Do |
+|----------|----------|------|-----------------|
+| `admin` | `admin123` | Administrator | Full access - manage users, all operations |
+| `manager` | `manager123` | Manager | Create/approve transfers, manage inventory |
+| `clerk` | `clerk123` | Warehouse Clerk | Create transfers, view inventory |
+| `auditor` | `auditor123` | Auditor | View audit logs, verify blockchain records |
+| `viewer` | `viewer123` | Viewer | Read-only access to inventory |
+
+---
+
 ## 📋 Overview
 
 This platform demonstrates a hybrid off-chain/on-chain architecture for enterprise supply chain management:
