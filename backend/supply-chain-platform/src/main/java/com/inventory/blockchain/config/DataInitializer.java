@@ -7,7 +7,7 @@ import com.inventory.blockchain.repository.PermissionRepository;
 import com.inventory.blockchain.repository.RoleRepository;
 import com.inventory.blockchain.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,16 +20,15 @@ public class DataInitializer implements CommandLineRunner {
     private final PermissionRepository permissionRepository;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     public DataInitializer(PermissionRepository permissionRepository,
                           RoleRepository roleRepository,
-                          UserRepository userRepository,
-                          PasswordEncoder passwordEncoder) {
+                          UserRepository userRepository) {
         this.permissionRepository = permissionRepository;
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
     @Override
